@@ -1,3 +1,6 @@
+# abstracting iterating functions
+# 	rowCols, boxNeighbors
+
 import sudokuText
 
 class Board(object):
@@ -62,11 +65,9 @@ class Board(object):
 		return
 
 	def pretty(self):
-		total = '\n'
+		output = '\n'
 		for y in range(1, 10):
 			row = ''
-			if y == 4 or y == 7:
-				total += '-----------------\n'
 			for x in range(1, 10):
 				val = self.squares[(x,y)].val
 				row += str(val)
@@ -74,13 +75,14 @@ class Board(object):
 					row += '|'
 				else:
 					row += ' '
-			total += row + '\n'
-		# total += '\n'
-		return total
+			output += row + '\n'
+			if y == 3 or y == 6:
+				output += '-----------------\n'
+		return output
 
 def boxRange(x):		# see footnote: "boxRange"
 	if   1 <= x <= 3:
-		return range(1, 4)
+		return range(1, 4)   # or [1,2,3]
 	elif 4 <= x <= 6:
 		return range(4, 7)
 	else:
@@ -88,8 +90,8 @@ def boxRange(x):		# see footnote: "boxRange"
 
 class Square(object):
 	def __init__(self, x, y, val):
-		self.x = x
-		self.y = y
+		self.x   = x
+		self.y   = y
 		self.val = val
 		self.couldBe = [1,2,3,4,5,6,7,8,9]
 
@@ -100,7 +102,7 @@ class Square(object):
 	def cannotBe(self, val):
 		try:
 			self.couldBe.remove(val)
-		except:
+		except:			# "remove" throws an error in the value is not found
 			return
 
 # Run full operation
@@ -108,7 +110,7 @@ def DFS_Sudoku(text):
 	board = Board()
 	board.pre_fill(sudokuText.parser(text))
 	board.sort_squares()
-	board.depth_first(0)
+	board.depth_first()
 
 nemesis = 'nemesis.txt'
 DFS_Sudoku(nemesis)
