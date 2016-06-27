@@ -5,65 +5,63 @@ import sudokuText
 
 class Board(object):
 	def __init__(self):
-		self.squares  = {}
-		self.sorted   = []  # open squares, sorted by number of possible values
+		self.squares = {}
+		self.empties = []
 		self.buildSquares()
 
+### Initializing functions
 	def buildSquares(self):
 		for x in range(1, 10):
 			for y in range(1, 10):
 				self.squares[(x,y)] = Square(x, y, None)
 
-	def pre_fill(self, values):  # values = [[x, y, val], ...]
+	def pre_fill(self, values):  # values = [[x, y, val], [x, y, val], ...]
 		for data in values:
 			self.markSquare(data[0], data[1], data[2])
 
 	def markSquare(self, x, y, val):
 		self.squares[(x,y)].fill(val)
 		for i in range(1, 10):
-			self.squares[(x,i)].cannotBe(val)   # clear row
-			self.squares[(i,y)].cannotBe(val)   # clear column
-		for a in boxRange(x):
-			for b in boxRange(y):
-				self.squares[(a,b)].cannotBe(val)
+			self.squares[(x,i)].cannotBe(val)   # iterates over row
+			self.squares[(i,y)].cannotBe(val)   # iterates over column
+		for square in self.iterBox(x, y):
+				square.cannotBe(val)			# iterates over box
 
+## Sort squares for DFS efficiency
 	def sort_squares(self):
-	# This function assembles the open squares in the most efficient order 
-	#	for depth-first search  (see footnote: "Sorting by efficiency")
-	# Squares with fewer possible values are put at the front
 		for i in range(1, 10):
 			for square in self.squares.itervalues():
 				if len(square.couldBe) == i:
-					self.sorted.append(square)
+					self.empties.append(square)
 
-	def legal_move(self, square, value):
-		x = square.x
-		y = square.y
-		for i in range(1, 10):
+### Depth-first search operations
+	def depth_first(self, depth=0):
+		if depth == len(self.empties):
+			print 'Puzzle solved!'
+			print self.pretty()
+			assert False					# cancel operation
+		square = self.empties[depth]
+		for value in square.couldBe:		# test possible values
+			if not self.legal_move(square.x, square.y, value):
+				continue					# pass over illegal moves
+			square.val = value
+			self.depth_first(depth+1)
+			square.val = None				# resets value if dead end reached
+		return
+
+	def legal_move(self, x, y, value):
+	# check other squares in the same row, column and box for duplicate value
+		for i in range(1, 10): 
 			if self.squares[(x,i)].val == value:
 				return False
 			if self.squares[(i,y)].val == value:
 				return False
-		for a in boxRange(x):
-			for b in boxRange(y):
-				if self.squares[(a,b)].val == value:
-					return False
+		for square in self.iterBox(x, y):
+			if square.val == value:
+				return False
 		return True
 
-	def depth_first(self, depth=0):
-		if depth == len(self.sorted):
-			print 'Puzzle solved!'
-			print self.pretty()
-			assert False					# cancel operation
-		square = self.sorted[depth]
-		for value in square.couldBe:		# test possible values
-			if not self.legal_move(square, value):
-				continue					# pass over illegal moves
-			square.val = value
-			self.depth_first(depth+1)		# run one level deeper
-			square.val = None				# resets value if dead end reached
-		return
-
+### Helper functions
 	def pretty(self):
 		output = '\n'
 		for y in range(1, 10):
@@ -80,7 +78,12 @@ class Board(object):
 				output += '-----------------\n'
 		return output
 
-def boxRange(x):		# see footnote: "boxRange"
+	def iterBox(self, x, y):  # iterates over all squares in the same 3x3 box
+		for a in boxRange(x):
+			for b in boxRange(y):
+				yield self.squares[(a,b)]
+
+def boxRange(x):
 	if   1 <= x <= 3:
 		return range(1, 4)   # or [1,2,3]
 	elif 4 <= x <= 6:
@@ -102,27 +105,15 @@ class Square(object):
 	def cannotBe(self, val):
 		try:
 			self.couldBe.remove(val)
-		except:			# "remove" throws an error in the value is not found
+		except:			# "remove" throws an error if the value is not found
 			return
 
 # Run full operation
-def DFS_Sudoku(text):
+def DFS_Sudoku(doc):
 	board = Board()
-	board.pre_fill(sudokuText.parser(text))
+	board.pre_fill(sudokuText.parser(doc))
 	board.sort_squares()
 	board.depth_first()
 
 nemesis = 'nemesis.txt'
 DFS_Sudoku(nemesis)
-
-"""
-Footnotes:
-
-Sorting for efficiency
-	In this depth-first search it is most efficient to test values
-
-boxRange
-
-"""
-
-
