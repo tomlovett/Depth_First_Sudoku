@@ -24,6 +24,15 @@ class Board(object):
 			for b in boxRange(y):
 				self.squares[(a,b)].cannotBe(val)
 
+	def sort_squares(self):
+	# This function assembles the open squares in the most efficient order 
+	#	for depth-first search  (see footnote: "Sorting by efficiency")
+	# Squares with fewer possible values are put at the front
+		for i in range(1, 10):
+			for square in self.squares.itervalues():
+				if len(square.couldBe) == i:
+					self.sorted.append(square)
+
 	def legal_move(self, square, value):
 		x = square.x
 		y = square.y
@@ -39,8 +48,9 @@ class Board(object):
 		return True
 
 	def depth_first(self, depth=0):
-		if depth = len(self.sorted):
+		if depth == len(self.sorted):
 			print 'Puzzle solved!'
+			print self.pretty()
 			assert False					# cancel operation
 		square = self.sorted[depth]
 		for value in square.couldBe:		# test possible values
@@ -51,21 +61,29 @@ class Board(object):
 			square.val = None				# resets value if dead end reached
 		return
 
-	def sort_squares(self):
-	# This function assembles the open squares in the most efficient order 
-	#	for depth-first search  (see footnote: "Sorting by efficiency")
-	# Squares with fewer possible values are put at the front
-		for i in range(1, 10):
-			for square in self.squares.itervalues():
-				if len(square.couldBe) == i:
-					self.sorted.append(square)
+	def pretty(self):
+		total = '\n'
+		for y in range(1, 10):
+			row = ''
+			if y == 4 or y == 7:
+				total += '-----------------\n'
+			for x in range(1, 10):
+				val = self.squares[(x,y)].val
+				row += str(val)
+				if x == 3 or x == 6:
+					row += '|'
+				else:
+					row += ' '
+			total += row + '\n'
+		# total += '\n'
+		return total
 
 def boxRange(x):		# see footnote: "boxRange"
 	if   1 <= x <= 3:
 		return range(1, 4)
 	elif 4 <= x <= 6:
 		return range(4, 7)
-	else
+	else:
 		return range(7, 10)
 
 class Square(object):
@@ -88,11 +106,8 @@ class Square(object):
 # Run full operation
 def DFS_Sudoku(text):
 	board = Board()
-	print 'board created'
 	board.pre_fill(sudokuText.parser(text))
-	print 'board pre-filled: ', board
 	board.sort_squares()
-	print 'board.sorted: ', board.sorted
 	board.depth_first(0)
 
 nemesis = 'nemesis.txt'
