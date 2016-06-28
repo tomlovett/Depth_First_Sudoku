@@ -29,10 +29,11 @@ class Board(object):
 
 ## Sort squares for DFS efficiency
 	def sort_squares(self):
+		byLength = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
+		for square in self.squares.itervalues():
+			byLength[len(square.couldBe)].append(square)
 		for i in range(1, 10):
-			for square in self.squares.itervalues():
-				if len(square.couldBe) == i:
-					self.empties.append(square)
+			self.empties.extend(byLength[i])
 
 ### Depth-first search operations
 	def depth_first(self, depth=0):
